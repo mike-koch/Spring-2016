@@ -28,8 +28,9 @@ void processCollatzSequence(int startingNumber, int endingNumber) {
     outputResults(frequencyMap);
 }
 
-int getStoppingTime(int value) {
-    unsigned long long stoppingTime = 0;
+int getStoppingTime(int originalValue) {
+	unsigned long long value = originalValue;
+    int stoppingTime = 0;
     while (value != 1) {
         if (value % 2 == 0) {
             value /= 2;
