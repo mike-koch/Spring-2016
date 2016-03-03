@@ -3,5 +3,5 @@ project(One_Way_Hash)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp numbers.cpp)
+set(SOURCE_FILES main.cpp rotate_functions.cpp rotate_functions.h)
 add_executable(One_Way_Hash ${SOURCE_FILES})
