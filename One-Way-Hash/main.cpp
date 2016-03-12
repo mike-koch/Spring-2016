@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 #include "numbers.cpp"
-#include "rotate_functions.h"
-#define DEBUG
+//#define DEBUG
+
+#define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
 
 using namespace std;
 
@@ -11,6 +13,15 @@ vector<vector<char>> chunk_message(vector<char> &entire_message);
 
 int main() {
     string message = "hello, world!";
+
+    unsigned int h0 = 0x6a09e667;
+    unsigned int h1 = 0xbb67ae85;
+    unsigned int h2 = 0x3c6ef372;
+    unsigned int h3 = 0xa54ff53a;
+    unsigned int h4 = 0x510e527f;
+    unsigned int h5 = 0x9b05688c;
+    unsigned int h6 = 0x1f83d9ab;
+    unsigned int h7 = 0x5be0cd19;
 
     // convert the string into a list of strings, representing each bit.
     vector<char> bit_string;
@@ -67,11 +78,10 @@ int main() {
 
     for (vector<char> chunk : chunked_message) {
         // create a 64-entry message schedule array w[0..63] of 32-bit words
-        char32_t schedule_array[64];
         int chunk_index = 0;
         for (int i = 0; i < 16; i++) {
             // copy chunk into first 16 words w[0..15] of the message schedule array
-            char32_t word;
+            unsigned int word;
 
             for (int j = chunk_index; j < chunk_index + 32; j++) {
                 if (chunk.at(j) == '1') {
@@ -81,7 +91,7 @@ int main() {
                 }
             }
 
-            schedule_array[i] = word;
+            w[i] = word;
             chunk_index += 32;
         }
 
@@ -89,23 +99,70 @@ int main() {
 #ifdef DEBUG
         cout << "After chunking, the schedule array should have 16 elements" << endl;
         for (int i = 0; i < 16; i++) {
-            cout << schedule_array[i] << " ";
+            cout << w[i] << " ";
         }
 #endif
 
         // Now extend the first 16 words into the remaining 48 words of the message schedule array
         for (int i = 16; i < 64; i++) {
-            char32_t s0 = rotate_right_32(schedule_array[i - 15], 7) ^
-                    rotate_right_32(schedule_array[i - 15], 18) ^
-                    (schedule_array[i - 15] >> 3);
+            unsigned int s0 = ROTRIGHT(w[i - 15], 7) ^
+                              ROTRIGHT(w[i - 15], 18) ^
+                              (w[i - 15] >> 3);
+            unsigned int s1 = ROTRIGHT(w[i - 2], 17) ^
+                              ROTRIGHT(w[i - 2], 19) ^
+                              (w[i - 2] >> 10);
 
-            char32_t s1 = rotate_right_32(schedule_array[i - 2], 17) ^
-                          rotate_right_32(schedule_array[i - 2], 19) ^
-                          (schedule_array[i - 2] >> 10);
-
-            schedule_array[i] = schedule_array[i - 16] + s0 + schedule_array[i - 7] + s1;
+            w[i] = w[i - 16] + s0 + w[i - 7] + s1;
         }
+
+        // Initialize working variables to current hash value
+        unsigned int a = h0;
+        unsigned int b = h1;
+        unsigned int c = h2;
+        unsigned int d = h3;
+        unsigned int e = h4;
+        unsigned int f = h5;
+        unsigned int g = h6;
+        unsigned int h = h7;
+
+        // Compression function main loop:
+        for (int i = 0; i < 64; i++) {
+            char32_t s1 = ROTRIGHT(e, 6) ^ ROTRIGHT(e, 11) ^ ROTRIGHT(e, 25);
+            char32_t ch = ((e) & (f)) ^ (~(e) & (g));
+            char32_t temp1 = h + s1 + ch + k[i] + w[i];
+            char32_t s0 = ROTRIGHT(a, 2) ^ ROTRIGHT(a, 13) ^ ROTRIGHT(a, 22);
+            char32_t maj = ((a) & (b)) ^ ((a) & (c)) ^ ((b) & (c));
+            char32_t temp2 = s0 + maj;
+
+            h = g;
+            g = f;
+            f = e;
+            e = d + temp1;
+            d = c;
+            c = b;
+            b = a;
+            a = temp1 + temp2;
+        }
+
+        // Add the compressed chunk to the current hash value
+        h0 += a;
+        h1 += b;
+        h2 += c;
+        h3 += d;
+        h4 += e;
+        h5 += f;
+        h6 += g;
+        h7 += h;
     }
+
+    cout << hex << h0;
+    cout << hex << h1;
+    cout << hex << h2;
+    cout << hex << h3;
+    cout << hex << h4;
+    cout << hex << h5;
+    cout << hex << h6;
+    cout << hex << h7;
 
     return 0;
 }
