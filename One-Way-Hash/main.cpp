@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <fstream>
 #include "numbers.cpp"
 //#define DEBUG
 
@@ -11,8 +12,22 @@ using namespace std;
 // Function prototypes
 vector<vector<char>> chunk_message(vector<char> &entire_message);
 
-int main() {
-    string message = "hello, world!";
+string gulp(std::istream &in)
+{
+    string ret;
+    char buffer[4096];
+    while (in.read(buffer, sizeof(buffer)))
+        ret.append(buffer, sizeof(buffer));
+    ret.append(buffer, in.gcount());
+    return ret;
+}
+
+int main(int argc, char *argv[]) {
+    ifstream input_stream;
+    input_stream.open(argv[1]);
+
+
+    string message = gulp(input_stream);
 
     unsigned int h0 = 0x6a09e667;
     unsigned int h1 = 0xbb67ae85;
