@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
+#include <map>
 //#define DEBUG
 
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
@@ -27,6 +28,10 @@ ifstream input_stream;
 uint64_t full_message_length;
 
 bool input_processed;
+int current_index = -1;
+map<int, string> chunk_order;
+int processed_chunks = 0;
+bool all_chunks_processed;
 
 void process_input() {
     string chunk;
@@ -36,7 +41,7 @@ void process_input() {
         full_message_length++;
         chunk += next_character;
         if (chunk.length() == size_before_hash) {
-            do_hash(chunk, full_message_length, h);
+            chunk_order[++current_index] = chunk;
             chunk = "";
         }
     }
@@ -48,13 +53,22 @@ void process_input() {
     }
 
     input_processed = true;
-    do_hash(chunk, full_message_length, h);
+    chunk_order[++current_index] = chunk;
+}
+
+void process_hashes() {
+    for (int i = 0; i < chunk_order.size(); i++) {
+        processed_chunks++;
+        do_hash(chunk_order[i], full_message_length, h);
+    }
 }
 
 int main(int argc, char *argv[]) {
     input_stream.open(argv[1]);
     process_input();
     input_stream.close();
+
+    process_hashes();
 
     cout << setfill('0') << setw(8) << hex << h[0];
     cout << setfill('0') << setw(8) << hex << h[1];
