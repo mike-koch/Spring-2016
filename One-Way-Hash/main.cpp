@@ -74,18 +74,10 @@ int main(int argc, char *argv[]) {
     if (message.length() * 8 <= 448)
     {
         unsigned int temp1 = (uint)((string_count * 8) >> 32);
-        cout << temp1 << endl;
         unsigned int temp2 = (uint)(string_count * 8);
-        cout << temp2 << endl;
         message_array[14] = temp1;
         message_array[15] = temp2;
     }
-
-    for (int i = 0; i < 16; i++)
-    {
-        cout << hex << message_array[i];
-    }
-    cout << endl;
 
     // create a 64-entry message schedule array w[0..63] of 32-bit words
     for (int i = 0; i < 16; i++) {
