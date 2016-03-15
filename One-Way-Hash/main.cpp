@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     input_stream.open(argv[1]);
 
     int buffer_size = 0;
-    int string_count = 0;
+    uint64_t string_count = 0;
 
     string message;
     char next_character;
@@ -68,18 +68,26 @@ int main(int argc, char *argv[]) {
         }
     }
 
+
     //as long as the message length is less than 448 and a 1 has been appended to the string,
     //we can append the files length to the end of the array
     if (message.length() * 8 <= 448)
     {
-        unsigned int temp1 = (uint)(string_count * 8 >> 32);
+        unsigned int temp1 = (uint)((string_count * 8) >> 32);
+        cout << temp1 << endl;
         unsigned int temp2 = (uint)(string_count * 8);
+        cout << temp2 << endl;
         message_array[14] = temp1;
         message_array[15] = temp2;
     }
 
+    for (int i = 0; i < 16; i++)
+    {
+        cout << hex << message_array[i];
+    }
+    cout << endl;
+
     // create a 64-entry message schedule array w[0..63] of 32-bit words
-    int chunk_index = 0;
     for (int i = 0; i < 16; i++) {
         w[i] = message_array[i];
     }
