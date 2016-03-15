@@ -43,15 +43,18 @@ int main(int argc, char *argv[]) {
     message += 0x80;
 
 
-    for (int i = 0; i < message.length(); i += 64) {
+    for (int block_start_index = 0; block_start_index < message.length(); block_start_index += 64) {
+        //uint64_t length = 0;
         string section_to_hash;
         for (int j = 0; j < 64; j++) {
-            uint64_t next_index = (i + 1) * j;
+            uint64_t next_index = j + block_start_index;
             if (next_index >= message.length()) {
                 break;
             }
+            //length++;
             section_to_hash += message[next_index];
         }
+        //length--;
         do_hash(section_to_hash, string_count, h);
     }
 
