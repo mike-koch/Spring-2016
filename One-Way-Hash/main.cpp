@@ -7,7 +7,8 @@
 
 using namespace std;
 
-unsigned int message_array[16];
+// Function prototypes
+void do_hash(string &message, uint64_t &string_count, unsigned int *h);
 
 //these are the values used to calculate SHA-256
 unsigned int h[] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
@@ -41,6 +42,36 @@ int main(int argc, char *argv[]) {
     // 80H = 10000000 binary
     message += 0x80;
 
+
+    for (int i = 0; i < message.length(); i += 64) {
+        string section_to_hash;
+        for (int j = 0; j < 64; j++) {
+            uint64_t next_index = (i + 1) * j;
+            if (next_index >= message.length()) {
+                break;
+            }
+            section_to_hash += message[next_index];
+        }
+        do_hash(section_to_hash, string_count, h);
+    }
+
+    input_stream.close();
+
+    cout << setfill('0') << setw(8) << hex << h[0];
+    cout << setfill('0') << setw(8) << hex << h[1];
+    cout << setfill('0') << setw(8) << hex << h[2];
+    cout << setfill('0') << setw(8) << hex << h[3];
+    cout << setfill('0') << setw(8) << hex << h[4];
+    cout << setfill('0') << setw(8) << hex << h[5];
+    cout << setfill('0') << setw(8) << hex << h[6];
+    cout << setfill('0') << setw(8) << hex << h[7];
+    cout << endl;
+
+    return 0;
+}
+
+void do_hash(string &message, uint64_t &string_count, unsigned int *h) {
+    unsigned int message_array[16];
 
     unsigned int w[64];
     for (int i = 0; i < 64; i++) {
@@ -127,18 +158,4 @@ int main(int argc, char *argv[]) {
     h[5] += f;
     h[6] += g;
     h[7] += hv;
-
-    input_stream.close();
-
-    cout << setfill('0') << setw(8) << hex << h[0];
-    cout << setfill('0') << setw(8) << hex << h[1];
-    cout << setfill('0') << setw(8) << hex << h[2];
-    cout << setfill('0') << setw(8) << hex << h[3];
-    cout << setfill('0') << setw(8) << hex << h[4];
-    cout << setfill('0') << setw(8) << hex << h[5];
-    cout << setfill('0') << setw(8) << hex << h[6];
-    cout << setfill('0') << setw(8) << hex << h[7];
-    cout << endl;
-
-    return 0;
 }
