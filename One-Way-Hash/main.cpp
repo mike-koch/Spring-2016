@@ -1,6 +1,4 @@
 #include <iostream>
-#include <vector>
-#include <cstdlib>
 #include <fstream>
 #include <iomanip>
 //#define DEBUG
@@ -29,20 +27,14 @@ int main(int argc, char *argv[]) {
     ifstream input_stream;
     input_stream.open(argv[1]);
 
-    int buffer_size = 0;
     uint64_t string_count = 0;
 
     string message;
     char next_character;
 
-    while (buffer_size < 64) {
-        if (input_stream.get(next_character)) {
-            message += next_character;
-            buffer_size++;
-            string_count++;
-        } else {
-            break;
-        }
+    while (input_stream.get(next_character)) {
+        message += next_character;
+        string_count++;
     }
 
     // add a 1 to the string
