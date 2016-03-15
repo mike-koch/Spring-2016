@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <vector>
 //#define DEBUG
 
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
@@ -22,49 +23,37 @@ unsigned int k[] =
          0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
          0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
+ifstream input_stream;
+uint64_t full_message_length;
 
-void process_input(ifstream &input_stream, string &full_message) {
+bool input_processed;
+
+void process_input() {
     string chunk;
     char next_character;
     const int size_before_hash = 64;
     while (input_stream.get(next_character)) {
+        full_message_length++;
         chunk += next_character;
         if (chunk.length() == size_before_hash) {
-            full_message += chunk;
+            do_hash(chunk, full_message_length, h);
             chunk = "";
         }
     }
 
-    full_message += chunk;
+    // add a 1 to the string
+    // 80H = 10000000 binary
+    if (chunk.length() < 63) {
+        chunk += 0x80;
+    }
+
+    input_processed = true;
+    do_hash(chunk, full_message_length, h);
 }
 
 int main(int argc, char *argv[]) {
-    ifstream input_stream;
     input_stream.open(argv[1]);
-
-
-    uint64_t string_count = 0;
-    string message;
-    process_input(input_stream, message);
-
-    // add a 1 to the string
-    // 80H = 10000000 binary
-    string_count = message.length();
-    message += 0x80;
-
-
-    for (uint64_t block_start_index = 0; block_start_index < message.length(); block_start_index += 64) {
-        string section_to_hash;
-        for (int j = 0; j < 64; j++) {
-            uint64_t next_index = j + block_start_index;
-            if (next_index >= message.length()) {
-                break;
-            }
-            section_to_hash += message[next_index];
-        }
-        do_hash(section_to_hash, string_count, h);
-    }
-
+    process_input();
     input_stream.close();
 
     cout << setfill('0') << setw(8) << hex << h[0];
@@ -102,9 +91,8 @@ void do_hash(string &message, uint64_t &full_length_of_message, unsigned int *h)
     }
 
 
-    //as long as the message length is less than 448 and a 1 has been appended to the string,
-    //we can append the files length to the end of the array
-    if (message.length() * 8 <= 448)
+    // append the length only if we can fit it.
+    if (message.length() * 8 <= 448 && input_processed)
     {
         unsigned int temp1 = (uint)((full_length_of_message * 8) >> 32);
         unsigned int temp2 = (uint)(full_length_of_message * 8);
