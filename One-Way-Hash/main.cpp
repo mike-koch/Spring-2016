@@ -2,7 +2,7 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
-#include <map>
+#include <libgen.h>
 //#define DEBUG
 
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
@@ -10,9 +10,8 @@
 using namespace std;
 
 // Function prototypes
-void do_hash(string &message, uint64_t &full_length_of_message, unsigned int *h);
-
-unsigned int h[] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+void do_hash(string &message, uint64_t &full_length_of_message, unsigned int *h, bool input_processed);
+void *execute(void *void_filename);
 
 unsigned int k[] =
         {0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -24,16 +23,9 @@ unsigned int k[] =
          0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
          0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
-ifstream input_stream;
-uint64_t full_message_length;
 
-bool input_processed;
-int current_index = -1;
-map<int, string> chunk_order;
-int processed_chunks = 0;
-bool all_chunks_processed;
-
-void process_input() {
+void process_input(ifstream &input_stream, unsigned int *h) {
+    uint64_t full_message_length;
     string chunk;
     char next_character;
     const int size_before_hash = 64;
@@ -41,7 +33,7 @@ void process_input() {
         full_message_length++;
         chunk += next_character;
         if (chunk.length() == size_before_hash) {
-            chunk_order[++current_index] = chunk;
+            do_hash(chunk, full_message_length, h, false);
             chunk = "";
         }
     }
@@ -52,23 +44,33 @@ void process_input() {
         chunk += 0x80;
     }
 
-    input_processed = true;
-    chunk_order[++current_index] = chunk;
-}
-
-void process_hashes() {
-    for (int i = 0; i < chunk_order.size(); i++) {
-        processed_chunks++;
-        do_hash(chunk_order[i], full_message_length, h);
-    }
+    do_hash(chunk, full_message_length, h, true);
 }
 
 int main(int argc, char *argv[]) {
-    input_stream.open(argv[1]);
-    process_input();
-    input_stream.close();
+    vector<pthread_t> threads;
 
-    process_hashes();
+    // Starting the loop at 1 since the first element in argv is the program itself.
+    for (int i = 1; i < argc; i++) {
+        pthread_t thread;
+        threads.push_back(thread);
+    }
+    for (int i = 1; i < argc; i++) {
+        char *filename = argv[i];
+        pthread_create(&threads.at(i - 1), NULL, &execute, (void *) filename);
+    }
+
+    pthread_exit(NULL);
+}
+
+void *execute(void *void_filename) {
+    char *filename = (char *) void_filename;
+    ifstream input_stream;
+    unsigned int h[] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19};
+
+    input_stream.open(filename);
+    process_input(input_stream, h);
+    input_stream.close();
 
     cout << setfill('0') << setw(8) << hex << h[0];
     cout << setfill('0') << setw(8) << hex << h[1];
@@ -78,12 +80,11 @@ int main(int argc, char *argv[]) {
     cout << setfill('0') << setw(8) << hex << h[5];
     cout << setfill('0') << setw(8) << hex << h[6];
     cout << setfill('0') << setw(8) << hex << h[7];
-    cout << endl;
-
-    return 0;
+    cout << "        " << basename(filename) << endl;
+    pthread_exit(NULL);
 }
 
-void do_hash(string &message, uint64_t &full_length_of_message, unsigned int *h) {
+void do_hash(string &message, uint64_t &full_length_of_message, unsigned int *h, bool input_processed) {
     unsigned int message_array[16];
 
     unsigned int w[64];
