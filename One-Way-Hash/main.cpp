@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <vector>
 #include <libgen.h>
-//#define DEBUG
 
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
 
